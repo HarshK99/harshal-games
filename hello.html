@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Character Sheet — Harshal Jain</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 0%, #0d3320 0%, #071c14 60%, #04100b 100%);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #e4fff0;
+    padding: 40px 16px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 720px;
+    background: linear-gradient(160deg, #123522 0%, #0c2418 100%);
+    border: 1px solid #2c6644;
+    border-radius: 20px;
+    box-shadow: 0 0 0 1px rgba(92, 255, 157, 0.15),
+                0 20px 60px rgba(0, 0, 0, 0.6),
+                0 0 80px rgba(60, 220, 120, 0.15);
+    overflow: hidden;
+  }
+
+  .banner {
+    position: relative;
+    padding: 28px 32px 20px;
+    background: linear-gradient(135deg, #1f6b3a 0%, #2c9152 50%, #3ab26e 100%);
+    text-align: center;
+  }
+
+  .banner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.03) 0px,
+      rgba(255,255,255,0.03) 2px,
+      transparent 2px,
+      transparent 12px
+    );
+  }
+
+  .name {
+    position: relative;
+    margin: 0;
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(200, 255, 220, 0.6), 0 2px 4px rgba(0,0,0,0.4);
+  }
+
+  .title {
+    position: relative;
+    margin-top: 6px;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #d9fff4;
+    opacity: 0.85;
+  }
+
+  .body {
+    display: flex;
+    gap: 28px;
+    padding: 28px 32px 32px;
+    flex-wrap: wrap;
+  }
+
+  .portrait-wrap {
+    flex: 0 0 200px;
+  }
+
+  .portrait {
+    width: 200px;
+    height: 200px;
+    border-radius: 16px;
+    background:
+      radial-gradient(circle at 35% 30%, #ffd9a0 0%, #e0995a 35%, #7a4a2c 100%);
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #4dff8a;
+    box-shadow: 0 0 24px rgba(77, 255, 138, 0.55), inset 0 0 30px rgba(0,0,0,0.35);
+  }
+
+  /* simple CSS-drawn cricket cap + jersey silhouette */
+  .portrait .hood {
+    position: absolute;
+    top: -20px; left: -20px; right: -20px;
+    height: 130px;
+    background: linear-gradient(180deg, #123522 0%, #1f6b3a 100%);
+    border-radius: 0 0 50% 50% / 0 0 60% 60%;
+  }
+
+  .portrait .eye {
+    position: absolute;
+    top: 92px;
+    width: 14px;
+    height: 8px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px 3px #ffffff;
+  }
+  .portrait .eye.left { left: 62px; }
+  .portrait .eye.right { right: 62px; }
+
+  .portrait .rune {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+  }
+
+  .level-badge {
+    margin-top: 12px;
+    text-align: center;
+    background: linear-gradient(135deg, #ffb703, #fb5607);
+    color: #1a0e00;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 6px 0;
+    border-radius: 999px;
+    box-shadow: 0 0 14px rgba(255, 140, 0, 0.6);
+  }
+
+  .info {
+    flex: 1 1 320px;
+    min-width: 260px;
+  }
+
+  .description {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: #bfffdc;
+    margin: 0 0 22px;
+    border-left: 3px solid #4dff8a;
+    padding-left: 12px;
+  }
+
+  .stat {
+    margin-bottom: 14px;
+  }
+
+  .stat-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .stat-label .name-txt { color: #d9c9ff; }
+  .stat-label .val { color: #fff; opacity: 0.85; }
+
+  .bar-track {
+    height: 12px;
+    background: #142418;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid #2c6644;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    position: relative;
+  }
+
+  .bar-fill.hp {
+    width: 82%;
+    background: linear-gradient(90deg, #ff4d4d, #ff8a8a);
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.7);
+  }
+  .bar-fill.mp {
+    width: 60%;
+    background: linear-gradient(90deg, #4d7dff, #8ab4ff);
+    box-shadow: 0 0 10px rgba(77, 125, 255, 0.7);
+  }
+  .bar-fill.stam {
+    width: 70%;
+    background: linear-gradient(90deg, #4dff8a, #a0ffbf);
+    box-shadow: 0 0 10px rgba(77, 255, 138, 0.7);
+  }
+
+  .attrs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .attr-box {
+    background: #102518;
+    border: 1px solid #2c6644;
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .attr-box .num {
+    font-size: 20px;
+    font-weight: 800;
+    color: #a0ffbf;
+    text-shadow: 0 0 8px rgba(160, 255, 191, 0.5);
+  }
+
+  .attr-box .lbl {
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #96d6ab;
+    margin-top: 2px;
+  }
+
+  .score-panel {
+    margin-top: 24px;
+    text-align: center;
+  }
+
+  .score-count {
+    font-size: 40px;
+    font-weight: 900;
+    color: #a0ffbf;
+    text-shadow: 0 0 16px rgba(160, 255, 191, 0.7);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hit-btn {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #06210f;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(180deg, #7dffa8 0%, #34d874 45%, #1f9e57 100%);
+    box-shadow:
+      0 6px 0 #146b3a,
+      0 10px 18px rgba(0, 0, 0, 0.5),
+      0 0 20px rgba(77, 255, 138, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    transform: translateY(0);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+
+  .hit-btn:hover {
+    filter: brightness(1.08);
+  }
+
+  .hit-btn:active {
+    transform: translateY(6px);
+    box-shadow:
+      0 0 0 #146b3a,
+      0 4px 10px rgba(0, 0, 0, 0.5),
+      0 0 12px rgba(77, 255, 138, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .hit-btn.pop {
+    animation: pop 0.18s ease;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(0.94) translateY(6px); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="banner">
+      <h1 class="name">Harshal Jain</h1>
+      <div class="title">All-Rounder · Fast Bowler</div>
+    </div>
+
+    <div class="body">
+      <div class="portrait-wrap">
+        <div class="portrait">
+          <div class="hood"></div>
+          <div class="eye left"></div>
+          <div class="eye right"></div>
+          <div class="rune">🏏</div>
+        </div>
+        <div class="level-badge">MAN OF THE MATCH</div>
+      </div>
+
+      <div class="info">
+        <p class="description">
+          Harshal steams in off a long run-up and lets it rip — genuine pace, late
+          swing, and a bat that can finish games. A true all-rounder who loves
+          cricket more than anything and never backs down from a contest.
+        </p>
+
+        <div class="stat">
+          <div class="stat-label"><span class="name-txt">Bowling</span><span class="val">88 / 100</span></div>
+          <div class="bar-track"><div class="bar-fill hp"></div></div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label"><span class="name-txt">Batting</span><span class="val">75 / 100</span></div>
+          <div class="bar-track"><div class="bar-fill mp"></div></div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label"><span class="name-txt">Fielding</span><span class="val">80 / 100</span></div>
+          <div class="bar-track"><div class="bar-fill stam"></div></div>
+        </div>
+
+        <div class="attrs">
+          <div class="attr-box"><div class="num">145</div><div class="lbl">Pace (km/h)</div></div>
+          <div class="attr-box"><div class="num">92</div><div class="lbl">Strength</div></div>
+          <div class="attr-box"><div class="num">87</div><div class="lbl">Accuracy</div></div>
+        </div>
+
+        <div class="score-panel">
+          <div class="score-count" id="scoreCount">0 RUNS</div>
+          <button class="hit-btn" id="hitBtn" type="button">Hit the Ball</button>
+          <div style="margin-top:14px;">
+            <a href="hand-cricket.html" style="color:#a0ffbf;font-size:12.5px;letter-spacing:1px;text-decoration:none;border-bottom:1px solid #2c6644;">Play Hand Cricket &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let runs = 0;
+    const scoreEl = document.getElementById('scoreCount');
+    const btn = document.getElementById('hitBtn');
+    const values = [1, 2, 4, 4, 6, 6];
+
+    btn.addEventListener('click', () => {
+      runs += values[Math.floor(Math.random() * values.length)];
+      scoreEl.textContent = runs + ' RUNS';
+      btn.classList.remove('pop');
+      void btn.offsetWidth;
+      btn.classList.add('pop');
+    });
+  </script>
+</body>
+</html>

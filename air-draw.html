@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Circle Challenge — Air Draw</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 0%, #14103a 0%, #0a0820 60%, #05041a 100%);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #ece6ff;
+    padding: 30px 16px;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 720px;
+    background: linear-gradient(160deg, #1c1650 0%, #120e35 100%);
+    border: 1px solid #3d2c8f;
+    border-radius: 20px;
+    box-shadow: 0 0 0 1px rgba(140, 110, 255, 0.15), 0 20px 60px rgba(0,0,0,0.6);
+    padding: 26px;
+  }
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+    text-align: center;
+  }
+
+  .sub {
+    text-align: center;
+    font-size: 12.5px;
+    color: #b7a8ff;
+    margin-bottom: 16px;
+  }
+
+  .turn-banner {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #fff;
+    background: rgba(140, 110, 255, 0.15);
+    border: 1px solid #3d2c8f;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 14px;
+  }
+
+  .turn-banner.p2 { background: rgba(125, 184, 255, 0.15); }
+
+  .top-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .cam-toggle-btn, .start-btn, .again-btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #16103d;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: linear-gradient(180deg, #c3b3ff 0%, #8f6bff 45%, #6a3ff0 100%);
+    box-shadow: 0 6px 0 #3a1f96, 0 10px 18px rgba(0,0,0,0.45);
+  }
+
+  .cam-toggle-btn:active, .start-btn:active, .again-btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #3a1f96, 0 4px 10px rgba(0,0,0,0.45);
+  }
+
+  .cam-toggle-btn:disabled, .start-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .cam-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #05041a;
+    border: 2px solid #3d2c8f;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .cam-box video { display: none; }
+
+  .cam-box canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  #output_canvas { z-index: 1; }
+  #draw_canvas { z-index: 2; }
+
+  .countdown-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 96px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(140, 110, 255, 0.9);
+    background: rgba(5, 4, 26, 0.35);
+  }
+
+  .result-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 4, 26, 0.55);
+    text-align: center;
+  }
+
+  .result-overlay .pct {
+    font-size: 54px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(140, 110, 255, 0.9);
+  }
+
+  .result-overlay .note {
+    font-size: 13px;
+    color: #b7a8ff;
+    margin-top: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .hidden { display: none !important; }
+
+  .status {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #b7a8ff;
+    min-height: 18px;
+  }
+
+  .scoreboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .player-card {
+    background: #16123f;
+    border: 1px solid #3d2c8f;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .player-card.p2 { border-color: #2c5c8f; }
+
+  .player-card .pname {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #b7a8ff;
+    margin-bottom: 6px;
+  }
+
+  .player-card .tries {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .player-card .try-slot {
+    flex: 1;
+    background: #0e0b2c;
+    border: 1px solid #3d2c8f;
+    border-radius: 6px;
+    padding: 6px 2px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #9686d6;
+  }
+
+  .player-card .try-slot.filled { color: #fff; }
+
+  .player-card .best {
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .player-card .best small {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #9686d6;
+    font-weight: 700;
+  }
+
+  .winner-banner {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 900;
+    padding: 14px;
+    border-radius: 12px;
+    margin-top: 16px;
+    background: rgba(140, 110, 255, 0.15);
+    border: 1px solid #6a3ff0;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(140, 110, 255, 0.8);
+  }
+
+  .legend {
+    text-align: center;
+    font-size: 12px;
+    color: #9686d6;
+    margin-top: 14px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <h1>Circle Challenge</h1>
+    <div class="sub">Draw the roundest circle in the air. Best of 3 tries. Winner takes it.</div>
+
+    <div class="turn-banner hidden" id="turnBanner">Player 1 — Try 1 of 3</div>
+
+    <div class="top-row">
+      <button class="cam-toggle-btn" id="camToggleBtn">Enable Camera</button>
+      <button class="start-btn hidden" id="startBtn">Start Game</button>
+      <button class="again-btn hidden" id="againBtn">Play Again</button>
+    </div>
+
+    <div class="cam-box">
+      <video class="input_video" playsinline></video>
+      <canvas id="output_canvas" width="640" height="480"></canvas>
+      <canvas id="draw_canvas" width="640" height="480"></canvas>
+      <div class="countdown-overlay hidden" id="countdownOverlay">3</div>
+      <div class="result-overlay hidden" id="resultOverlay">
+        <div class="pct" id="resultPct">0%</div>
+        <div class="note" id="resultNote">Try 1 of 3</div>
+      </div>
+    </div>
+
+    <div class="status" id="status">Click "Enable Camera" to start</div>
+
+    <div class="scoreboard">
+      <div class="player-card" id="p1Card">
+        <div class="pname">Player 1</div>
+        <div class="tries" id="p1Tries">
+          <div class="try-slot">–</div>
+          <div class="try-slot">–</div>
+          <div class="try-slot">–</div>
+        </div>
+        <div class="best"><span id="p1Best">--</span>%<small>Best</small></div>
+      </div>
+      <div class="player-card p2" id="p2Card">
+        <div class="pname">Player 2</div>
+        <div class="tries" id="p2Tries">
+          <div class="try-slot">–</div>
+          <div class="try-slot">–</div>
+          <div class="try-slot">–</div>
+        </div>
+        <div class="best"><span id="p2Best">--</span>%<small>Best</small></div>
+      </div>
+    </div>
+
+    <div id="winnerBanner"></div>
+
+    <div class="legend">☝️ Index finger only = draw &nbsp;·&nbsp; 🖐 Open palm / ✊ fist = lift pen &amp; submit</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script>
+    const videoElement = document.querySelector('.input_video');
+    const outputCanvas = document.getElementById('output_canvas');
+    const outputCtx = outputCanvas.getContext('2d');
+    const drawCanvas = document.getElementById('draw_canvas');
+    const drawCtx = drawCanvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const camToggleBtn = document.getElementById('camToggleBtn');
+    const startBtn = document.getElementById('startBtn');
+    const againBtn = document.getElementById('againBtn');
+    const turnBanner = document.getElementById('turnBanner');
+    const countdownOverlay = document.getElementById('countdownOverlay');
+    const resultOverlay = document.getElementById('resultOverlay');
+    const resultPct = document.getElementById('resultPct');
+    const resultNote = document.getElementById('resultNote');
+    const p1TriesEl = document.getElementById('p1Tries');
+    const p2TriesEl = document.getElementById('p2Tries');
+    const p1BestEl = document.getElementById('p1Best');
+    const p2BestEl = document.getElementById('p2Best');
+    const winnerBanner = document.getElementById('winnerBanner');
+
+    const W = outputCanvas.width;
+    const H = outputCanvas.height;
+    const TRIES_PER_PLAYER = 3;
+    const PLAYER_COLORS = { 1: '#7dffa8', 2: '#7db8ff' };
+
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
+    drawCtx.lineWidth = 5;
+
+    // phase: 'idle' | 'countdown' | 'drawing' | 'result' | 'gameover'
+    let phase = 'idle';
+    let currentPlayer = 1;
+    let currentTry = 1;
+    let scores = { 1: [], 2: [] };
+
+    let trackingActive = false;
+    let strokePoints = [];
+    let strokeStartTime = 0;
+    let smoothedPoint = null;
+    let lastPoint = null;
+    let forceSubmitTimer = null;
+    let pauseStreak = 0;
+    const PAUSE_CONFIRM_FRAMES = 8;
+
+    function isFingerUp(tip, pip, mcp) {
+      return tip.y < pip.y && pip.y < mcp.y;
+    }
+
+    function mirrorX(xNorm) { return W - xNorm * W; }
+    function toY(yNorm) { return yNorm * H; }
+
+    function onResults(results) {
+      outputCtx.save();
+      outputCtx.clearRect(0, 0, W, H);
+      outputCtx.translate(W, 0);
+      outputCtx.scale(-1, 1);
+      outputCtx.drawImage(results.image, 0, 0, W, H);
+
+      let gesture = 'none';
+      let fingertip = null;
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const lm = results.multiHandLandmarks[0];
+        drawConnectors(outputCtx, lm, HAND_CONNECTIONS, { color: '#8f6bff', lineWidth: 2 });
+        drawLandmarks(outputCtx, lm, { color: '#ffffff', lineWidth: 1, radius: 2 });
+
+        const indexTip = lm[8], indexPip = lm[6], indexMcp = lm[5];
+        const middleTip = lm[12], middlePip = lm[10], middleMcp = lm[9];
+        const ringTip = lm[16], ringPip = lm[14], ringMcp = lm[13];
+        const pinkyTip = lm[20], pinkyPip = lm[18], pinkyMcp = lm[17];
+
+        const indexUp = isFingerUp(indexTip, indexPip, indexMcp);
+        const middleUp = isFingerUp(middleTip, middlePip, middleMcp);
+        const ringUp = isFingerUp(ringTip, ringPip, ringMcp);
+        const pinkyUp = isFingerUp(pinkyTip, pinkyPip, pinkyMcp);
+
+        if (indexUp && !middleUp && !ringUp && !pinkyUp) {
+          gesture = 'draw';
+          fingertip = { x: mirrorX(indexTip.x), y: toY(indexTip.y) };
+        } else {
+          gesture = 'pause';
+        }
+      }
+      outputCtx.restore();
+
+      if (phase !== 'drawing') return;
+
+      if (gesture === 'draw' && fingertip) {
+        pauseStreak = 0;
+
+        if (!trackingActive) {
+          trackingActive = true;
+          strokePoints = [];
+          strokeStartTime = Date.now();
+          smoothedPoint = null;
+          lastPoint = null;
+          forceSubmitTimer = setTimeout(() => finishStroke(), 8000);
+        }
+
+        smoothedPoint = smoothedPoint
+          ? { x: smoothedPoint.x + (fingertip.x - smoothedPoint.x) * 0.5,
+              y: smoothedPoint.y + (fingertip.y - smoothedPoint.y) * 0.5 }
+          : fingertip;
+
+        strokePoints.push(smoothedPoint);
+
+        drawCtx.strokeStyle = PLAYER_COLORS[currentPlayer];
+        drawCtx.beginPath();
+        if (lastPoint) {
+          drawCtx.moveTo(lastPoint.x, lastPoint.y);
+          drawCtx.lineTo(smoothedPoint.x, smoothedPoint.y);
+          drawCtx.stroke();
+        }
+        lastPoint = smoothedPoint;
+
+        statusEl.textContent = '✏️ Drawing';
+      } else if (trackingActive) {
+        // Require several consecutive non-draw frames before treating this
+        // as a real pen-up — a single flickered frame (hand rotation, brief
+        // tracking loss mid-circle) shouldn't cut the stroke off.
+        pauseStreak += 1;
+        if (pauseStreak < PAUSE_CONFIRM_FRAMES) return;
+
+        pauseStreak = 0;
+        const elapsed = Date.now() - strokeStartTime;
+        if (elapsed >= 500 && strokePoints.length >= 15) {
+          finishStroke();
+        } else {
+          // too short / accidental flicker — discard and keep waiting
+          trackingActive = false;
+          strokePoints = [];
+          lastPoint = null;
+          smoothedPoint = null;
+          clearTimeout(forceSubmitTimer);
+        }
+      } else {
+        pauseStreak = 0;
+        statusEl.textContent = gesture === 'pause' ? '✋ Pen up — point with index finger to draw' : 'No hand detected';
+      }
+    }
+
+    function finishStroke() {
+      clearTimeout(forceSubmitTimer);
+      trackingActive = false;
+      const pts = strokePoints;
+      strokePoints = [];
+      lastPoint = null;
+      smoothedPoint = null;
+      submitTry(pts);
+    }
+
+    // --- Circularity scoring ---
+    function scoreCircle(points) {
+      if (points.length < 15) return 0;
+
+      let cx = 0, cy = 0;
+      points.forEach(p => { cx += p.x; cy += p.y; });
+      cx /= points.length;
+      cy /= points.length;
+
+      let perimeter = 0;
+      for (let i = 1; i < points.length; i++) {
+        perimeter += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+      }
+      // close the loop back to the start
+      perimeter += Math.hypot(points[0].x - points[points.length - 1].x, points[0].y - points[points.length - 1].y);
+
+      let area = 0;
+      for (let i = 0; i < points.length; i++) {
+        const a = points[i];
+        const b = points[(i + 1) % points.length];
+        area += a.x * b.y - b.x * a.y;
+      }
+      area = Math.abs(area) / 2;
+
+      if (perimeter === 0) return 0;
+
+      const circularity = (4 * Math.PI * area) / (perimeter * perimeter);
+      return Math.max(0, Math.min(100, circularity * 100));
+    }
+
+    // --- Game flow ---
+    function updateTurnBanner() {
+      turnBanner.textContent = `Player ${currentPlayer} — Try ${currentTry} of ${TRIES_PER_PLAYER}`;
+      turnBanner.classList.toggle('p2', currentPlayer === 2);
+    }
+
+    function updateScoreboard() {
+      [1, 2].forEach(p => {
+        const triesEl = p === 1 ? p1TriesEl : p2TriesEl;
+        const bestEl = p === 1 ? p1BestEl : p2BestEl;
+        const slots = triesEl.children;
+        for (let i = 0; i < TRIES_PER_PLAYER; i++) {
+          const val = scores[p][i];
+          slots[i].textContent = val !== undefined ? val.toFixed(0) + '%' : '–';
+          slots[i].classList.toggle('filled', val !== undefined);
+        }
+        const best = scores[p].length ? Math.max(...scores[p]) : null;
+        bestEl.textContent = best !== null ? best.toFixed(1) : '--';
+      });
+    }
+
+    function startTry() {
+      phase = 'countdown';
+      resultOverlay.classList.add('hidden');
+      drawCtx.clearRect(0, 0, W, H);
+      updateTurnBanner();
+      turnBanner.classList.remove('hidden');
+      statusEl.textContent = 'Get ready...';
+      runCountdown(3, () => {
+        phase = 'drawing';
+        statusEl.textContent = '✋ Pen up — point with index finger to draw';
+      });
+    }
+
+    function runCountdown(seconds, onDone) {
+      countdownOverlay.classList.remove('hidden');
+      countdownOverlay.textContent = seconds;
+      const tick = () => {
+        seconds -= 1;
+        if (seconds <= 0) {
+          countdownOverlay.classList.add('hidden');
+          onDone();
+          return;
+        }
+        countdownOverlay.textContent = seconds;
+        setTimeout(tick, 1000);
+      };
+      setTimeout(tick, 1000);
+    }
+
+    function submitTry(points) {
+      phase = 'result';
+      const pct = scoreCircle(points);
+      scores[currentPlayer].push(pct);
+      updateScoreboard();
+
+      resultPct.textContent = pct.toFixed(1) + '%';
+      resultNote.textContent = `Player ${currentPlayer} — Try ${currentTry} of ${TRIES_PER_PLAYER}`;
+      resultOverlay.classList.remove('hidden');
+
+      setTimeout(() => {
+        advance();
+      }, 2000);
+    }
+
+    function advance() {
+      if (currentTry < TRIES_PER_PLAYER) {
+        currentTry += 1;
+      } else if (currentPlayer === 1) {
+        currentPlayer = 2;
+        currentTry = 1;
+      } else {
+        finishGame();
+        return;
+      }
+      startTry();
+    }
+
+    function finishGame() {
+      phase = 'gameover';
+      resultOverlay.classList.add('hidden');
+      turnBanner.classList.add('hidden');
+      drawCtx.clearRect(0, 0, W, H);
+
+      const best1 = Math.max(...scores[1]);
+      const best2 = Math.max(...scores[2]);
+
+      let msg;
+      if (best1 === best2) {
+        msg = `🤝 Tie! Both hit ${best1.toFixed(1)}%`;
+      } else if (best1 > best2) {
+        msg = `🏆 Player 1 Wins! ${best1.toFixed(1)}% vs ${best2.toFixed(1)}%`;
+      } else {
+        msg = `🏆 Player 2 Wins! ${best2.toFixed(1)}% vs ${best1.toFixed(1)}%`;
+      }
+
+      winnerBanner.innerHTML = `<div class="winner-banner">${msg}</div>`;
+      statusEl.textContent = 'Game over';
+      startBtn.classList.add('hidden');
+      againBtn.classList.remove('hidden');
+    }
+
+    function resetGame() {
+      currentPlayer = 1;
+      currentTry = 1;
+      scores = { 1: [], 2: [] };
+      updateScoreboard();
+      winnerBanner.innerHTML = '';
+      againBtn.classList.add('hidden');
+      startBtn.classList.remove('hidden');
+      turnBanner.classList.add('hidden');
+      drawCtx.clearRect(0, 0, W, H);
+      phase = 'idle';
+      statusEl.textContent = 'Click "Start Game" when ready';
+    }
+
+    startBtn.addEventListener('click', () => {
+      startBtn.classList.add('hidden');
+      startTry();
+    });
+
+    againBtn.addEventListener('click', resetGame);
+
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.5
+    });
+    hands.onResults(onResults);
+
+    let camera = null;
+
+    camToggleBtn.addEventListener('click', async () => {
+      camToggleBtn.disabled = true;
+      camToggleBtn.textContent = 'Starting...';
+      statusEl.textContent = 'Requesting camera access...';
+      try {
+        camera = new Camera(videoElement, {
+          onFrame: async () => { await hands.send({ image: videoElement }); },
+          width: W,
+          height: H
+        });
+        await camera.start();
+        camToggleBtn.classList.add('hidden');
+        startBtn.classList.remove('hidden');
+        statusEl.textContent = 'Click "Start Game" when ready';
+      } catch (err) {
+        statusEl.textContent = 'Camera access failed: ' + err.message;
+        camToggleBtn.disabled = false;
+        camToggleBtn.textContent = 'Enable Camera';
+      }
+    });
+  </script>
+</body>
+</html>

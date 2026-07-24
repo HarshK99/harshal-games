@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Harshal's Tutorial Apps</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 0%, #10142f 0%, #07081a 60%, #04040f 100%);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #e8e6ff;
+    padding: 40px 16px;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    margin: 0 0 6px;
+  }
+
+  .sub {
+    text-align: center;
+    font-size: 13px;
+    color: #9c9bd6;
+    margin-bottom: 32px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+  }
+
+  a.card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: linear-gradient(160deg, #171b3d 0%, #0f1128 100%);
+    border: 1px solid #2c2c66;
+    border-radius: 16px;
+    padding: 20px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  a.card:hover {
+    transform: translateY(-4px);
+    border-color: #6a3ff0;
+  }
+
+  .card .emoji {
+    font-size: 30px;
+    margin-bottom: 10px;
+  }
+
+  .card h2 {
+    font-size: 17px;
+    margin: 0 0 6px;
+  }
+
+  .card p {
+    font-size: 12.5px;
+    color: #9c9bd6;
+    line-height: 1.5;
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Harshal's Tutorial Apps</h1>
+    <div class="sub">A collection of small builds — character sheets, games, and computer vision experiments</div>
+
+    <div class="grid">
+      <a class="card" href="hello.html">
+        <div class="emoji">🏏</div>
+        <h2>Character Sheet</h2>
+        <p>Harshal Jain, all-rounder fast bowler — stats, bars, and a click-counter mini-game.</p>
+      </a>
+
+      <a class="card" href="hand-cricket.html">
+        <div class="emoji">✋</div>
+        <h2>Hand Cricket</h2>
+        <p>Classic hand cricket vs the computer — play by tapping numbers or with live hand-gesture detection.</p>
+      </a>
+
+      <a class="card" href="air-draw.html">
+        <div class="emoji">⭕</div>
+        <h2>Circle Challenge</h2>
+        <p>Draw a circle in the air with your finger. Two players, three tries each, scored on roundness.</p>
+      </a>
+
+      <a class="card" href="gesture-test.html">
+        <div class="emoji">🖐️</div>
+        <h2>Gesture Detector</h2>
+        <p>Standalone test bed for the finger-counting computer vision used by the other apps.</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
