@@ -256,7 +256,7 @@
       <button class="again-btn hidden" id="againBtn">Play Again</button>
     </div>
 
-    <div class="cam-box">
+    <div class="cam-box" id="camBox">
       <video class="input_video" playsinline></video>
       <canvas id="output_canvas" width="640" height="480"></canvas>
       <canvas id="draw_canvas" width="640" height="480"></canvas>
@@ -319,10 +319,29 @@
     const p2BestEl = document.getElementById('p2Best');
     const winnerBanner = document.getElementById('winnerBanner');
 
-    const W = outputCanvas.width;
-    const H = outputCanvas.height;
+    const camBox = document.getElementById('camBox');
+    let W = outputCanvas.width;
+    let H = outputCanvas.height;
     const TRIES_PER_PLAYER = 3;
     const PLAYER_COLORS = { 1: '#7dffa8', 2: '#7db8ff' };
+
+    // The camera's actual resolution/aspect ratio (especially on phones,
+    // often portrait) rarely matches our fallback 640x480 guess — resize
+    // both canvases and the box to the real feed once we know it, so the
+    // video isn't force-stretched and finger coordinates stay accurate.
+    let camSized = false;
+    function ensureCamSize(video) {
+      if (camSized) return;
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return;
+      W = vw; H = vh;
+      outputCanvas.width = W;
+      outputCanvas.height = H;
+      drawCanvas.width = W;
+      drawCanvas.height = H;
+      camBox.style.aspectRatio = `${W} / ${H}`;
+      camSized = true;
+    }
 
     drawCtx.lineCap = 'round';
     drawCtx.lineJoin = 'round';
@@ -351,6 +370,7 @@
     function toY(yNorm) { return yNorm * H; }
 
     function onResults(results) {
+      ensureCamSize(results.image);
       outputCtx.save();
       outputCtx.clearRect(0, 0, W, H);
       outputCtx.translate(W, 0);

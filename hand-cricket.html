@@ -98,6 +98,12 @@
     border-radius: 12px;
     padding: 14px 10px;
     text-align: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .score-box.batting {
+    border-color: #ffb703;
+    box-shadow: 0 0 14px rgba(255, 183, 3, 0.5);
   }
 
   .score-box .lbl {
@@ -197,6 +203,12 @@
     background: #142418;
     border: 2px solid #2c6644;
     color: #a0ffbf;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .duel .pick.batting {
+    border-color: #ffb703;
+    box-shadow: 0 0 14px rgba(255, 183, 3, 0.5);
   }
 
   .duel .vs {
@@ -323,6 +335,18 @@
 
   .cam-box video { visibility: hidden; }
 
+  .cam-dim {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: rgba(4, 16, 11, 0.82);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .cam-dim.active { opacity: 1; }
+
   .cam-reading {
     text-align: center;
     font-size: 13px;
@@ -339,6 +363,13 @@
     color: #fff;
     text-shadow: 0 0 10px rgba(160, 255, 191, 0.7);
   }
+
+  #fxCanvas {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
@@ -347,24 +378,24 @@
     <div class="banner">
       <h1>Hand Cricket</h1>
       <div class="sub">Harshal Jain vs Computer</div>
-      <a href="hello.html" style="position:relative;display:inline-block;margin-top:10px;font-size:11px;letter-spacing:1px;color:#06210f;background:#fff;opacity:0.85;padding:4px 10px;border-radius:999px;text-decoration:none;font-weight:700;">&larr; Character Sheet</a>
     </div>
 
     <div class="body">
-      <div class="status" id="status">Choose bat or bowl to start</div>
       <div class="target" id="target"></div>
       <div id="resultBanner"></div>
 
       <div class="scoreboard">
-        <div class="score-box">
+        <div class="score-box" id="p1Box">
           <div class="lbl" id="p1Label">You</div>
           <div class="num" id="p1Score">0</div>
         </div>
-        <div class="score-box">
+        <div class="score-box" id="p2Box">
           <div class="lbl" id="p2Label">Computer</div>
           <div class="num" id="p2Score">0</div>
         </div>
       </div>
+
+      <div class="status" id="status">Choose bat or bowl to start</div>
 
       <div class="duel" id="duel">
         <div class="pick" id="yourPick">?</div>
@@ -377,17 +408,18 @@
       </div>
 
       <div class="cam-panel hidden" id="camPanel">
-        <div class="cam-box">
+        <div class="cam-box" id="camBox">
           <video class="input_video" playsinline></video>
           <canvas class="output_canvas" width="320" height="240"></canvas>
+          <div class="cam-dim" id="camDim"></div>
         </div>
         <div class="cam-reading" id="camReading">Show a gesture...</div>
       </div>
 
       <div id="tossArea" class="action-row">
         <div class="choice-row">
-          <button class="toss-btn" id="batBtn">Bat First</button>
-          <button class="toss-btn" id="bowlBtn">Bowl First</button>
+          <button class="toss-btn" id="batBtn">🏏 Bat First</button>
+          <button class="toss-btn" id="bowlBtn">🔴 Bowl First</button>
         </div>
       </div>
 
@@ -409,6 +441,8 @@
     </div>
   </div>
 
+  <canvas id="fxCanvas"></canvas>
+
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
@@ -416,6 +450,8 @@
     const statusEl = document.getElementById('status');
     const targetEl = document.getElementById('target');
     const resultBanner = document.getElementById('resultBanner');
+    const p1Box = document.getElementById('p1Box');
+    const p2Box = document.getElementById('p2Box');
     const p1Label = document.getElementById('p1Label');
     const p2Label = document.getElementById('p2Label');
     const p1ScoreEl = document.getElementById('p1Score');
@@ -434,9 +470,26 @@
     const camToggleBtn = document.getElementById('camToggleBtn');
     const camPanel = document.getElementById('camPanel');
     const camReading = document.getElementById('camReading');
+    const camDim = document.getElementById('camDim');
     const videoElement = document.querySelector('.input_video');
     const canvasElement = document.querySelector('.output_canvas');
     const canvasCtx = canvasElement.getContext('2d');
+    const camBox = document.getElementById('camBox');
+
+    // The camera's actual resolution/aspect ratio (especially on phones,
+    // often portrait) rarely matches our fallback 320x240 guess — resize
+    // the canvas and box to the real feed once we know it, so the video
+    // isn't force-stretched into the wrong shape.
+    let camSized = false;
+    function ensureCamSize(video) {
+      if (camSized) return;
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return;
+      canvasElement.width = vw;
+      canvasElement.height = vh;
+      camBox.style.aspectRatio = `${vw} / ${vh}`;
+      camSized = true;
+    }
 
     // --- Gesture detection (MediaPipe Hands) ---
     let gestureEnabled = false;
@@ -505,6 +558,7 @@
     }
 
     function onHandResults(results) {
+      ensureCamSize(results.image);
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
@@ -545,6 +599,22 @@
     let camera = null;
 
     camToggleBtn.addEventListener('click', async () => {
+      if (gestureEnabled) {
+        if (camera && typeof camera.stop === 'function') camera.stop();
+        if (videoElement.srcObject) {
+          videoElement.srcObject.getTracks().forEach(t => t.stop());
+          videoElement.srcObject = null;
+        }
+        gestureEnabled = false;
+        camSized = false;
+        camPanel.classList.add('hidden');
+        camDim.classList.remove('active');
+        camToggleBtn.textContent = 'Enable Gesture Mode';
+        pad.classList.remove('hidden');
+        padPrompt.classList.remove('hidden');
+        return;
+      }
+
       camToggleBtn.disabled = true;
       camToggleBtn.textContent = 'Starting camera...';
       try {
@@ -555,6 +625,7 @@
         });
         await camera.start();
         camPanel.classList.remove('hidden');
+        camToggleBtn.disabled = false;
         camToggleBtn.textContent = 'Gesture Mode: ON';
         gestureEnabled = true;
         pad.classList.add('hidden');
@@ -566,16 +637,103 @@
       }
     });
 
+    // --- Win/loss effects ---
+    const fxCanvas = document.getElementById('fxCanvas');
+    const fxCtx = fxCanvas.getContext('2d');
+
+    function runParticles({ count, colors, gravity, spread, duration, rain }) {
+      fxCanvas.width = window.innerWidth;
+      fxCanvas.height = window.innerHeight;
+
+      const particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * fxCanvas.width,
+          y: -20 - Math.random() * fxCanvas.height * 0.4,
+          vx: (Math.random() - 0.5) * spread,
+          vy: rain ? 6 + Math.random() * 4 : 2 + Math.random() * 3,
+          rot: Math.random() * 360,
+          vr: rain ? 0 : (Math.random() - 0.5) * 10,
+          size: rain ? 3 + Math.random() * 2 : 6 + Math.random() * 6,
+          length: rain ? 14 + Math.random() * 10 : 0,
+          color: colors[Math.floor(Math.random() * colors.length)]
+        });
+      }
+
+      const start = Date.now();
+      function frame() {
+        fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += gravity;
+          p.rot += p.vr;
+          fxCtx.save();
+          fxCtx.translate(p.x, p.y);
+          if (rain) {
+            fxCtx.strokeStyle = p.color;
+            fxCtx.lineWidth = p.size;
+            fxCtx.beginPath();
+            fxCtx.moveTo(0, 0);
+            fxCtx.lineTo(0, p.length);
+            fxCtx.stroke();
+          } else {
+            fxCtx.rotate(p.rot * Math.PI / 180);
+            fxCtx.fillStyle = p.color;
+            fxCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.5);
+          }
+          fxCtx.restore();
+        });
+
+        if (Date.now() - start < duration) {
+          requestAnimationFrame(frame);
+        } else {
+          fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function celebrateWin() {
+      runParticles({
+        count: 150,
+        colors: ['#7dffa8', '#ffe08a', '#ff7dbf', '#7db8ff', '#ffffff'],
+        gravity: 0.12,
+        spread: 6,
+        duration: 3000,
+        rain: false
+      });
+    }
+
+    function mournLoss() {
+      runParticles({
+        count: 70,
+        colors: ['#5a6b78', '#3d4b56', '#7a8a96'],
+        gravity: 0.2,
+        spread: 0.6,
+        duration: 2000,
+        rain: true
+      });
+    }
+
     let youBatFirst = true;
     let innings = 1;
     let target = null;
     let scores = { you: 0, cpu: 0 };
     let batting = 'you';
 
+    function updateBattingHighlight() {
+      p1Box.classList.toggle('batting', batting === 'you');
+      p2Box.classList.toggle('batting', batting === 'cpu');
+      yourPickEl.classList.toggle('batting', batting === 'you');
+      cpuPickEl.classList.toggle('batting', batting === 'cpu');
+    }
+
     function resetGame() {
       innings = 1;
       target = null;
       scores = { you: 0, cpu: 0 };
+      batting = 'you';
       p1ScoreEl.textContent = '0';
       p2ScoreEl.textContent = '0';
       p1Label.textContent = 'You';
@@ -590,11 +748,16 @@
       tossArea.classList.remove('hidden');
       playArea.classList.add('hidden');
       againArea.classList.add('hidden');
+      p1Box.classList.remove('batting');
+      p2Box.classList.remove('batting');
+      yourPickEl.classList.remove('batting');
+      cpuPickEl.classList.remove('batting');
     }
 
     function startInnings1(userBats) {
       youBatFirst = userBats;
       batting = userBats ? 'you' : 'cpu';
+      updateBattingHighlight();
       tossArea.classList.add('hidden');
       playArea.classList.remove('hidden');
       statusEl.textContent = userBats ? 'Innings 1 — You are batting' : 'Innings 1 — Computer is batting';
@@ -606,7 +769,9 @@
       yourPickEl.textContent = '?';
       cpuPickEl.textContent = '?';
       gestureHistory = [];
+      if (gestureEnabled) camDim.classList.add('active');
       runCountdown(3, () => {
+        camDim.classList.remove('active');
         if (gestureEnabled) {
           statusEl.textContent = `${currentBattingLabel()} batting — show your gesture now`;
           gestureHistory = [];
@@ -710,6 +875,7 @@
         target = scores[batting];
         innings = 2;
         batting = batting === 'you' ? 'cpu' : 'you';
+        updateBattingHighlight();
         targetEl.textContent = `Target: ${target + 1} runs`;
         statusEl.textContent = `Out! Innings 2 — ${currentBattingLabel()} needs ${target + 1} to win`;
         scheduleNextRound();
@@ -733,9 +899,11 @@
       } else if (youWin) {
         msg = `You Win! ${scores.you} - ${scores.cpu}`;
         cls = 'win';
+        celebrateWin();
       } else {
         msg = `Computer Wins! ${scores.cpu} - ${scores.you}`;
         cls = 'lose';
+        mournLoss();
       }
 
       resultBanner.innerHTML = `<div class="result-banner ${cls}">${msg}</div>`;

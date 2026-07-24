@@ -162,7 +162,7 @@
 
     <button class="start-btn" id="startBtn">Enable Camera</button>
 
-    <div class="cam-box">
+    <div class="cam-box" id="camBox">
       <video class="input_video" playsinline></video>
       <canvas class="output_canvas" width="640" height="480"></canvas>
     </div>
@@ -191,9 +191,24 @@
     const videoElement = document.getElementsByClassName('input_video')[0];
     const canvasElement = document.getElementsByClassName('output_canvas')[0];
     const canvasCtx = canvasElement.getContext('2d');
+    const camBox = document.getElementById('camBox');
     const statusEl = document.getElementById('status');
     const valueBox = document.getElementById('valueBox');
     const startBtn = document.getElementById('startBtn');
+
+    // The camera's actual resolution/aspect ratio (especially on phones,
+    // often portrait) rarely matches our fallback 640x480 guess — resize
+    // the canvas and box to the real feed once we know it.
+    let camSized = false;
+    function ensureCamSize(video) {
+      if (camSized) return;
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return;
+      canvasElement.width = vw;
+      canvasElement.height = vh;
+      camBox.style.aspectRatio = `${vw} / ${vh}`;
+      camSized = true;
+    }
 
     let history = [];
     const HISTORY_SIZE = 8;
@@ -260,6 +275,7 @@
     }
 
     function onResults(results) {
+      ensureCamSize(results.image);
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
